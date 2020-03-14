@@ -110,7 +110,7 @@ type result struct {
 	code int
 }
 
-func ping(url string, seq int, durs chan result) {
+func ping(url string, seq int, results chan result) {
 	start := time.Now()
 
 	atomic.AddInt32(&ntotal, 1)
@@ -120,7 +120,7 @@ func ping(url string, seq int, durs chan result) {
 	req, err := http.NewRequest(method, url, nil)
 	if err != nil {
 		fmt.Printf("error=%v\n", err)
-		durs <- result{0, -1}
+		results <- result{0, -1}
 		return
 	}
 
@@ -143,7 +143,7 @@ func ping(url string, seq int, durs chan result) {
 	res, err := client.Do(req)
 	if err != nil {
 		fmt.Printf("error=%v\n", err)
-		durs <- result{0, -1}
+		results <- result{0, -1}
 		return
 	}
 
@@ -166,7 +166,7 @@ func ping(url string, seq int, durs chan result) {
 		res.StatusCode,
 		seq, dur)
 
-	durs <- result{dur, res.StatusCode}
+	results <- result{dur, res.StatusCode}
 }
 
 func stats(results chan result, done chan bool) {
