@@ -28,7 +28,7 @@ var flag6 bool
 var myHeaders headers
 var method string
 
-var kflag bool
+var insecure bool
 
 var http11 bool
 var keepalive bool
@@ -43,7 +43,7 @@ func newTransport() *transport {
 	tr := &transport{}
 
 	tlsconfig := &tls.Config{
-		InsecureSkipVerify: kflag,
+		InsecureSkipVerify: insecure,
 	}
 
 	tlsconfig.VerifyPeerCertificate =
@@ -243,7 +243,7 @@ func main() {
 	maxCount := flag.Int("c", -1, "quit after `count` requests")
 	flood := flag.Bool("f", false, "flood ping")
 	sleep := flag.Duration("i", 1*time.Second, "`interval` between requests")
-	flag.BoolVar(&kflag, "k", false, "turn TLS errors into warnings")
+	flag.BoolVar(&insecure, "k", false, "turn TLS errors into warnings")
 
 	flag.BoolVar(&http11, "http1.1", false, "force HTTP/1.1")
 	flag.BoolVar(&keepalive, "keepalive", false,
