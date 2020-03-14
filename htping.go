@@ -147,7 +147,6 @@ func ping(url string, seq int, results chan result) {
 
 	written, _ := io.Copy(ioutil.Discard, res.Body)
 	res.Body.Close()
-	client.CloseIdleConnections()
 
 	stop := time.Now()
 
