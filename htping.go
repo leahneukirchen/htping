@@ -76,7 +76,7 @@ func newTransport() *transport {
 		}
 
 	dialer := &net.Dialer{
-		Timeout:   5 * time.Second,
+		Timeout: 5 * time.Second,
 	}
 
 	tr.RoundTripper = &http.Transport{
@@ -162,7 +162,8 @@ func ping(url string, seq int, results chan result) {
 		t.addr,
 		res.Proto,
 		res.StatusCode,
-		seq, dur)
+		seq,
+		dur)
 
 	results <- result{dur, res.StatusCode}
 }
