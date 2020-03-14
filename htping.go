@@ -84,7 +84,7 @@ func newTransport() *transport {
 		TLSHandshakeTimeout: 5 * time.Second,
 		DisableKeepAlives:   !keepalive,
 		TLSClientConfig:     tlsconfig,
-		// we set TLSClientConfig, so http2 is off by default anyway
+		// we set TLSClientConfig, so http2 is off by default
 		ForceAttemptHTTP2: !http11,
 
 		DialContext: func(ctx context.Context, _, addr string) (net.Conn, error) {
