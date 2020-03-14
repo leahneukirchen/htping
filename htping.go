@@ -242,25 +242,29 @@ func (i *headers) Set(value string) error {
 func main() {
 	flag.BoolVar(&flag4, "4", false, "resolve IPv4 only")
 	flag.BoolVar(&flag6, "6", false, "resolve IPv6 only")
-	flag.Var(&myHeaders, "H", "set custom headers")
-	flag.StringVar(&method, "X", "HEAD", "HTTP method")
+	flag.Var(&myHeaders, "H", "set custom `header`s")
+	flag.StringVar(&method, "X", "HEAD", "HTTP `method`")
 
-	maxCount := flag.Int("c", -1, "count")
+	maxCount := flag.Int("c", -1, "quit after `count` requests")
 	flood := flag.Bool("f", false, "flood ping")
-	sleep := flag.Duration("i", 1*time.Second, "interval")
+	sleep := flag.Duration("i", 1*time.Second, "`interval` between requests")
 	flag.BoolVar(&kflag, "k", false, "turn TLS errors into warnings")
 
 	flag.BoolVar(&http11, "http1.1", false, "force HTTP/1.1")
 	flag.BoolVar(&keepalive, "keepalive", false,
 		"enable keepalive/use persistent connections")
 
+	flag.Usage = func() {
+		fmt.Fprintf(os.Stderr, "Usage: %s [FLAGS...] URL\n", os.Args[0])
+		flag.PrintDefaults()
+	}
+
 	flag.Parse()
 
 	args := flag.Args()
 	if len(args) != 1 {
-		fmt.Fprintf(os.Stderr, "Usage: %s [FLAGS...] URL\n", os.Args[0])
-		flag.PrintDefaults()
-		os.Exit(1)
+		flag.Usage()
+		os.Exit(2)
 	}
 	u := args[0]
 
