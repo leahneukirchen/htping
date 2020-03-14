@@ -120,7 +120,6 @@ func ping(url string, seq int, results chan result) {
 	req, err := http.NewRequest(method, url, nil)
 	if err != nil {
 		fmt.Printf("error=%v\n", err)
-		results <- result{0, -1}
 		return
 	}
 
@@ -143,7 +142,6 @@ func ping(url string, seq int, results chan result) {
 	res, err := client.Do(req)
 	if err != nil {
 		fmt.Printf("error=%v\n", err)
-		results <- result{0, -1}
 		return
 	}
 
@@ -180,19 +178,17 @@ func stats(results chan result, done chan bool) {
 	for {
 		select {
 		case r := <-results:
-			if r.code > 0 {
-				if r.dur < min {
-					min = r.dur
-				}
-				if r.dur > max {
-					max = r.dur
-				}
-				sum += r.dur
-				sum2 += r.dur * r.dur
-				nrecv++
-				if r.code <= 400 {
-					nsucc++
-				}
+			if r.dur < min {
+				min = r.dur
+			}
+			if r.dur > max {
+				max = r.dur
+			}
+			sum += r.dur
+			sum2 += r.dur * r.dur
+			nrecv++
+			if r.code <= 400 {
+				nsucc++
 			}
 
 		case <-done:
