@@ -1,0 +1,72 @@
+HTPING(1)                   General Commands Manual                  HTPING(1)
+
+NAME
+     htping – periodically send HTTP requests
+
+SYNOPSIS
+     htping [-4] [-6] [-H field:value] [-X method] [-c count] [-i interval]
+            [-f] [-k] [--http1.1] [--keepalive] host
+
+DESCRIPTION
+     The htping utility periodically sends HTTP requests to host, prints the
+     results and computes some statistics at exit.  Use Ctrl-C to quit htping.
+
+     The options are as follows:
+
+     -4      Use IPv4 only.
+
+     -6      Use IPv6 only.
+
+     -H field:value
+             Add an additional HTTP header to the requests.
+
+     -X method
+             Send a different HTTP method than the default ‘HEAD’.
+
+     -c count
+             Stop after sending count requests.  By default, htping loops
+             indefinitely.
+
+     -i interval
+             Perform one HTTP request every interval (default: ‘1s’).
+
+     -f      Flood mode: perform requests back-to-back without waiting.
+
+     -k      Turn TLS verification errors into warnings.
+
+     --http1.1
+             Disable HTTP/2 requests.
+
+     --keepalive
+             Enable keepalive resp. use persistent connections.
+
+EXIT STATUS
+     The htping utility exits 0 on success, and >0 if an error occurs.
+
+EXAMPLES
+     Example output:
+
+           HEAD http://example.com
+           0 bytes from 93.184.216.34:80: HTTP/1.1 200 seq=0 time=0.211 ms
+           0 bytes from 93.184.216.34:80: HTTP/1.1 200 seq=1 time=0.222 ms
+           0 bytes from 93.184.216.34:80: HTTP/1.1 200 seq=2 time=0.221 ms
+           0 bytes from 93.184.216.34:80: HTTP/1.1 200 seq=3 time=0.222 ms
+           ^C
+           4 requests sent, 4 responses, 100% successful, time 4000ms
+           rtt min/avg/max/mdev = 0.211/0.219/0.222/0.005 ms
+
+SEE ALSO
+     curl(1), httping(1)
+
+AUTHORS
+     Leah Neukirchen <leah@vuxu.org>
+
+LICENSE
+     htping is in the public domain.
+
+     To the extent possible under law, the creator of this work has waived all
+     copyright and related or neighboring rights to this work.
+
+     http://creativecommons.org/publicdomain/zero/1.0/
+
+Void Linux                      March 14, 2020                      Void Linux
