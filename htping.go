@@ -77,7 +77,6 @@ func newTransport() *transport {
 
 	dialer := &net.Dialer{
 		Timeout:   5 * time.Second,
-		DualStack: true,
 	}
 
 	tr.rtp = &http.Transport{
