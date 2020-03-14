@@ -34,7 +34,7 @@ var http11 bool
 var keepalive bool
 
 type transport struct {
-	rtp  http.RoundTripper
+	http.RoundTripper
 	msg  string
 	addr string
 }
@@ -79,7 +79,7 @@ func newTransport() *transport {
 		Timeout:   5 * time.Second,
 	}
 
-	tr.rtp = &http.Transport{
+	tr.RoundTripper = &http.Transport{
 		Proxy:               http.ProxyFromEnvironment,
 		TLSHandshakeTimeout: 5 * time.Second,
 		DisableKeepAlives:   !keepalive,
@@ -99,10 +99,6 @@ func newTransport() *transport {
 	}
 
 	return tr
-}
-
-func (t *transport) RoundTrip(req *http.Request) (*http.Response, error) {
-	return t.rtp.RoundTrip(req)
 }
 
 func (t *transport) GotConn(info httptrace.GotConnInfo) {
