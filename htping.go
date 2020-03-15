@@ -1,3 +1,9 @@
+// htping - periodically send HTTP requests
+//
+// To the extent possible under law, Leah Neukirchen <leah@vuxu.org>
+// has waived all copyright and related or neighboring rights to this work.
+// http://creativecommons.org/publicdomain/zero/1.0/
+
 package main
 
 import (
