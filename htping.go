@@ -39,6 +39,8 @@ type transport struct {
 	addr string
 }
 
+var myTransport *transport
+
 func newTransport() *transport {
 	tr := &transport{}
 
@@ -115,8 +117,6 @@ func ping(url string, seq int, results chan result) {
 
 	atomic.AddInt32(&ntotal, 1)
 
-	t := newTransport()
-
 	req, err := http.NewRequest(method, url, nil)
 	if err != nil {
 		fmt.Printf("error=%v\n", err)
@@ -128,12 +128,12 @@ func ping(url string, seq int, results chan result) {
 	}
 
 	trace := &httptrace.ClientTrace{
-		GotConn: t.GotConn,
+		GotConn: myTransport.GotConn,
 	}
 	req = req.WithContext(httptrace.WithClientTrace(req.Context(), trace))
 
 	client := &http.Client{
-		Transport: t,
+		Transport: myTransport,
 		Timeout:   10 * time.Second,
 		CheckRedirect: func(req *http.Request, via []*http.Request) error {
 			return http.ErrUseLastResponse
@@ -152,13 +152,13 @@ func ping(url string, seq int, results chan result) {
 
 	dur := float64(stop.Sub(start)) / float64(time.Second)
 
-	if len(t.msg) > 0 {
-		fmt.Printf("%v\n", t.msg)
+	if len(myTransport.msg) > 0 {
+		fmt.Printf("%v\n", myTransport.msg)
 	}
 
 	fmt.Printf("%d bytes from %v: %s %d seq=%d time=%.3f ms\n",
 		written,
-		t.addr,
+		myTransport.addr,
 		res.Proto,
 		res.StatusCode,
 		seq,
@@ -282,6 +282,8 @@ func main() {
 	go stats(results, done)
 
 	count := 0
+
+	myTransport = newTransport()
 
 	if *flood {
 	flood_loop:
