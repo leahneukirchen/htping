@@ -35,7 +35,6 @@ var keepalive bool
 
 type transport struct {
 	http.RoundTripper
-	msg  string
 	addr string
 }
 
@@ -70,7 +69,7 @@ func newTransport() *transport {
 
 			_, err := certs[0].Verify(opts)
 			if err != nil {
-				tr.msg = err.Error()
+				fmt.Printf("%v\n", err)
 			}
 
 			// succeed
@@ -151,10 +150,6 @@ func ping(url string, seq int, results chan result) {
 	stop := time.Now()
 
 	dur := float64(stop.Sub(start)) / float64(time.Second)
-
-	if len(myTransport.msg) > 0 {
-		fmt.Printf("%v\n", myTransport.msg)
-	}
 
 	fmt.Printf("%d bytes from %v: %s %d seq=%d time=%.3f ms\n",
 		written,
