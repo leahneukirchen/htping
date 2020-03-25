@@ -27,6 +27,8 @@ import (
 	"time"
 )
 
+const VERSION = "0.1"
+
 var ntotal int32
 
 var flag4 bool
@@ -127,6 +129,8 @@ func ping(url string, seq int, results chan result) {
 		fmt.Printf("error=%v\n", err)
 		return
 	}
+
+	req.Header.Set("User-Agent", "htping/" + VERSION)
 
 	for _, e := range myHeaders {
 		req.Header.Set(e.key, e.value)
