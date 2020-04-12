@@ -5,7 +5,7 @@ NAME
 
 SYNOPSIS
      htping [-4] [-6] [-H field:value] [-X method] [-c count] [-i interval]
-            [-f] [-k] [--http1.1] [--keepalive] host
+            [-f] [-k] [--http1.1] [--keepalive] [-l addr] [-q] host
 
 DESCRIPTION
      The htping utility periodically sends HTTP requests to host, prints the
@@ -40,6 +40,12 @@ DESCRIPTION
      --keepalive
              Enable keepalive resp. use persistent connections.
 
+     -l addr
+             Start a HTTP server at addr (e.g. ‘:9100’) to provide Prometheus
+             metrics at ‘/metrics’.
+
+     -q      Quiet mode, don't print request status lines.
+
 EXIT STATUS
      The htping utility exits 0 on success, and >0 if an error occurs.
 
@@ -69,4 +75,4 @@ LICENSE
 
      http://creativecommons.org/publicdomain/zero/1.0/
 
-Void Linux                      March 14, 2020                      Void Linux
+Void Linux                      April 12, 2020                      Void Linux

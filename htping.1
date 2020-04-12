@@ -1,4 +1,4 @@
-.Dd March 14, 2020
+.Dd April 12, 2020
 .Dt HTPING 1
 .Os
 .Sh NAME
@@ -16,6 +16,8 @@
 .Op Fl k
 .Op Fl -http1.1
 .Op Fl -keepalive
+.Op Fl l Ar addr
+.Op Fl q
 .Ar host
 .Sh DESCRIPTION
 The
@@ -58,6 +60,15 @@ Turn TLS verification errors into warnings.
 Disable HTTP/2 requests.
 .It Fl -keepalive
 Enable keepalive resp.\& use persistent connections.
+.It Fl l Ar addr
+Start a HTTP server at
+.Ar addr
+(e.g.\&
+.Sq :9100 )
+to provide Prometheus metrics at
+.Sq /metrics .
+.It Fl q
+Quiet mode, don't print request status lines.
 .El
 .Sh EXIT STATUS
 .Ex -std

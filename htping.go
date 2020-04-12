@@ -1,4 +1,4 @@
-// htping - periodically send HTTP requests
+// htping - periodically send HTTP requests and keep statistics
 //
 // To the extent possible under law, Leah Neukirchen <leah@vuxu.org>
 // has waived all copyright and related or neighboring rights to this work.
@@ -15,6 +15,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"log"
 	"math"
 	"net"
 	"net/http"
@@ -22,17 +23,71 @@ import (
 	"net/url"
 	"os"
 	"os/signal"
+	"strconv"
 	"strings"
 	"sync/atomic"
 	"time"
+
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 const VERSION = "0.1"
+
+var (
+	sizeGauge = prometheus.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Namespace: "htpingd",
+			Name:      "responses_size_bytes",
+			Help:      "Size of HTTP response.",
+		},
+		[]string{
+			"url",
+			"addr",
+			"code",
+		},
+	)
+	requestCounter = prometheus.NewCounterVec(
+		prometheus.CounterOpts{
+			Namespace: "htpingd",
+			Name:      "requests_total",
+			Help:      "Number of HTTP requests.",
+		},
+		[]string{
+			"url",
+		},
+	)
+	responseCounter = prometheus.NewCounterVec(
+		prometheus.CounterOpts{
+			Namespace: "htpingd",
+			Name:      "responses_total",
+			Help:      "Number of HTTP responses.",
+		},
+		[]string{
+			"url",
+			"addr",
+			"code",
+		},
+	)
+	durSummary = prometheus.NewSummaryVec(
+		prometheus.SummaryOpts{
+			Namespace:  "htpingd",
+			Name:       "duration_seconds",
+			Help:       "Request duration in seconds.",
+			Objectives: map[float64]float64{0.5: 0.05, 0.9: 0.01, 0.99: 0.001},
+		},
+		[]string{
+			"url",
+			"addr",
+		},
+	)
+)
 
 var ntotal int32
 
 var flag4 bool
 var flag6 bool
+var quiet bool
 var myHeaders headers
 var method string
 
@@ -122,6 +177,7 @@ type result struct {
 func ping(url string, seq int, results chan result) {
 	start := time.Now()
 
+	requestCounter.WithLabelValues(url).Inc()
 	atomic.AddInt32(&ntotal, 1)
 
 	req, err := http.NewRequest(method, url, nil)
@@ -130,7 +186,7 @@ func ping(url string, seq int, results chan result) {
 		return
 	}
 
-	req.Header.Set("User-Agent", "htping/" + VERSION)
+	req.Header.Set("User-Agent", "htping/"+VERSION)
 
 	for _, e := range myHeaders {
 		req.Header.Set(e.key, e.value)
@@ -161,13 +217,19 @@ func ping(url string, seq int, results chan result) {
 
 	dur := float64(stop.Sub(start)) / float64(time.Second)
 
-	fmt.Printf("%d bytes from %v: %s %d seq=%d time=%.3f ms\n",
-		written,
-		myTransport.addr,
-		res.Proto,
-		res.StatusCode,
-		seq,
-		dur)
+	sizeGauge.WithLabelValues(url, string(myTransport.addr), strconv.Itoa(res.StatusCode)).Set(float64(written))
+	responseCounter.WithLabelValues(url, string(myTransport.addr), strconv.Itoa(res.StatusCode)).Inc()
+	durSummary.WithLabelValues(url, string(myTransport.addr)).Observe(dur)
+
+	if !quiet {
+		fmt.Printf("%d bytes from %v: %s %d seq=%d time=%.3f ms\n",
+			written,
+			myTransport.addr,
+			res.Proto,
+			res.StatusCode,
+			seq,
+			dur)
+	}
 
 	results <- result{dur, res.StatusCode}
 }
@@ -238,6 +300,7 @@ func (i *headers) Set(value string) error {
 func main() {
 	flag.BoolVar(&flag4, "4", false, "resolve IPv4 only")
 	flag.BoolVar(&flag6, "6", false, "resolve IPv6 only")
+	flag.BoolVar(&quiet, "q", false, "quiet")
 	flag.Var(&myHeaders, "H", "set custom `header`s")
 	flag.StringVar(&method, "X", "HEAD", "HTTP `method`")
 
@@ -249,6 +312,8 @@ func main() {
 	flag.BoolVar(&http11, "http1.1", false, "force HTTP/1.1")
 	flag.BoolVar(&keepalive, "keepalive", false,
 		"enable keepalive/use persistent connections")
+
+	listenAddr := flag.String("l", "", "listen on `addr`")
 
 	flag.Usage = func() {
 		fmt.Fprintf(os.Stderr, "Usage: %s [FLAGS...] URL\n", os.Args[0])
@@ -275,6 +340,33 @@ func main() {
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "%s\n", err.Error())
 		os.Exit(1)
+	}
+
+	if *listenAddr != "" {
+		prometheus.MustRegister(requestCounter)
+		prometheus.MustRegister(responseCounter)
+		prometheus.MustRegister(durSummary)
+
+		go func() {
+			http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+				w.Header().Set("Content-Type", "text/html")
+				w.Write([]byte(`<html>
+    <head><title>htpingd</title></head>
+    <body>
+    <h1>htpingd</h1>
+    <p><a href="/metrics">Metrics</a></p>
+</body>
+    </html>
+`))
+			})
+			http.Handle("/metrics", promhttp.Handler())
+			log.Println("Prometheus metrics listening on", *listenAddr)
+			err := http.ListenAndServe(*listenAddr, nil)
+			if err != http.ErrServerClosed {
+				log.Fatal(err)
+				os.Exit(1)
+			}
+		}()
 	}
 
 	fmt.Printf("%s %s\n", method, u)
