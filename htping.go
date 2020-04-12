@@ -25,6 +25,7 @@ import (
 	"os/signal"
 	"strconv"
 	"strings"
+	"sync"
 	"sync/atomic"
 	"time"
 
@@ -101,8 +102,6 @@ type transport struct {
 	addr string
 }
 
-var myTransport *transport
-
 func newTransport() *transport {
 	tr := &transport{}
 
@@ -174,7 +173,7 @@ type result struct {
 	code int
 }
 
-func ping(url string, seq int, results chan result) {
+func ping(url string, seq int, myTransport *transport, results chan result) {
 	start := time.Now()
 
 	requestCounter.WithLabelValues(url).Inc()
@@ -260,13 +259,15 @@ func stats(results chan result, done chan bool) {
 
 		case <-done:
 			stop := time.Now()
-			fmt.Printf("\n%d requests sent, %d (%d%%) responses, %d (%d%%) successful, time %dms\n",
-				ntotal,
-				nrecv,
-				(100*nrecv)/int(ntotal),
-				nsucc,
-				(100*nsucc)/int(ntotal),
-				int64(stop.Sub(start)/time.Millisecond))
+			if ntotal > 0 {
+				fmt.Printf("\n%d requests sent, %d (%d%%) responses, %d (%d%%) successful, time %dms\n",
+					ntotal,
+					nrecv,
+					(100*nrecv)/int(ntotal),
+					nsucc,
+					(100*nsucc)/int(ntotal),
+					int64(stop.Sub(start)/time.Millisecond))
+			}
 			if nrecv > 0 {
 				mdev := math.Sqrt(sum2/float64(nrecv) -
 					sum/float64(nrecv)*sum/float64(nrecv))
@@ -323,23 +324,9 @@ func main() {
 	flag.Parse()
 
 	args := flag.Args()
-	if len(args) != 1 {
+	if len(args) < 1 {
 		flag.Usage()
 		os.Exit(2)
-	}
-	u := args[0]
-
-	u2, err := url.ParseRequestURI(u)
-	if (err != nil && strings.HasSuffix(err.Error(),
-		"invalid URI for request")) ||
-		(u2.Scheme != "http" && u2.Scheme != "https") {
-		u = "http://" + u
-	}
-
-	_, err = url.ParseRequestURI(u)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "%s\n", err.Error())
-		os.Exit(1)
 	}
 
 	if *listenAddr != "" {
@@ -369,8 +356,6 @@ func main() {
 		}()
 	}
 
-	fmt.Printf("%s %s\n", method, u)
-
 	interrupt := make(chan os.Signal, 1)
 	signal.Notify(interrupt, os.Interrupt)
 
@@ -380,36 +365,65 @@ func main() {
 
 	count := 0
 
-	myTransport = newTransport()
+	var wg sync.WaitGroup
+	wg.Add(len(args))
 
-	if *flood {
-	flood_loop:
-		for {
-			select {
-			default:
-				ping(u, count, results)
-				count++
-			case <-interrupt:
-				break flood_loop
-			}
+	for _, mu := range args {
+		u := mu
+
+		u2, err := url.ParseRequestURI(u)
+		if (err != nil && strings.HasSuffix(err.Error(),
+			"invalid URI for request")) ||
+			(u2.Scheme != "http" && u2.Scheme != "https") {
+			u = "http://" + u
 		}
-	} else {
-		pingTicker := time.NewTicker(*sleep)
-		go ping(u, count, results)
-		count++
-	ping_loop:
-		for {
-			if *maxCount > 0 && count > *maxCount {
-				break
-			}
-			select {
-			case <-pingTicker.C:
-				go ping(u, count, results)
-				count++
-			case <-interrupt:
-				break ping_loop
-			}
+
+		_, err = url.ParseRequestURI(u)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "%s\n", err.Error())
+			os.Exit(1)
 		}
+
+		fmt.Printf("%s %s\n", method, u)
+
+		go func() {
+			myTransport := newTransport()
+			defer wg.Done()
+
+			if *flood {
+				for {
+					select {
+					default:
+						ping(u, count, myTransport, results)
+						count++
+					}
+				}
+			} else {
+				pingTicker := time.NewTicker(*sleep)
+				go ping(u, count, myTransport, results)
+				count++
+				for {
+					if *maxCount > 0 && count > *maxCount {
+						break
+					}
+					select {
+					case <-pingTicker.C:
+						go ping(u, count, myTransport, results)
+						count++
+					}
+				}
+			}
+		}()
+	}
+
+	waitCh := make(chan struct{})
+	go func() {
+		wg.Wait()
+	}()
+
+	select {
+	case <-waitCh:
+	case <-interrupt:
 	}
 
 	done <- true

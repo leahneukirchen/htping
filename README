@@ -5,10 +5,10 @@ NAME
 
 SYNOPSIS
      htping [-4] [-6] [-H field:value] [-X method] [-c count] [-i interval]
-            [-f] [-k] [--http1.1] [--keepalive] [-l addr] [-q] host
+            [-f] [-k] [--http1.1] [--keepalive] [-l addr] [-q] urls ...
 
 DESCRIPTION
-     The htping utility periodically sends HTTP requests to host, prints the
+     The htping utility periodically sends HTTP requests to urls, prints the
      results and computes some statistics at exit.  Use Ctrl-C to quit htping.
 
      The options are as follows:
