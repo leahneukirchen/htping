@@ -419,6 +419,7 @@ func main() {
 	waitCh := make(chan struct{})
 	go func() {
 		wg.Wait()
+		close(waitCh)
 	}()
 
 	select {
