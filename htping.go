@@ -221,7 +221,7 @@ func ping(url string, seq int, myTransport *transport, results chan result) {
 	durSummary.WithLabelValues(url, string(myTransport.addr)).Observe(dur)
 
 	if !quiet {
-		fmt.Printf("%d bytes from %v: %s %d seq=%d time=%.3f ms\n",
+		fmt.Printf("%d bytes from %v: %s %d seq=%d time=%.3f s\n",
 			written,
 			myTransport.addr,
 			res.Proto,
@@ -271,7 +271,7 @@ func stats(results chan result, done chan bool) {
 			if nrecv > 0 {
 				mdev := math.Sqrt(sum2/float64(nrecv) -
 					sum/float64(nrecv)*sum/float64(nrecv))
-				fmt.Printf("rtt min/avg/max/mdev = %.3f/%.3f/%.3f/%.3f ms\n",
+				fmt.Printf("rtt min/avg/max/mdev = %.3f/%.3f/%.3f/%.3f s\n",
 					min, sum/float64(nrecv), max, mdev)
 			}
 
