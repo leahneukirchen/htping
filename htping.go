@@ -87,6 +87,7 @@ var ntotal int32
 
 var flag4 bool
 var flag6 bool
+var network = "tcp"
 var quiet bool
 var myHeaders headers
 var method string
@@ -150,16 +151,7 @@ func newTransport() *transport {
 		ForceAttemptHTTP2: !http11,
 
 		DialContext: func(ctx context.Context, _, addr string) (net.Conn, error) {
-			var network string
-			switch {
-			case flag4:
-				network = "tcp4"
-			case flag6:
-				network = "tcp6"
-			default:
-				network = "tcp"
-			}
-			return dialer.DialContext(ctx, network, addr)
+			return dialer.DialContext(ctx, network, addr) // force our network preference
 		},
 	}
 
@@ -332,6 +324,13 @@ func main() {
 	if len(args) < 1 {
 		flag.Usage()
 		os.Exit(2)
+	}
+
+	switch {
+	case flag4:
+		network = "tcp4"
+	case flag6:
+		network = "tcp6"
 	}
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
