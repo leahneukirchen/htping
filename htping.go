@@ -260,7 +260,7 @@ func stats(results chan result, done chan bool) {
 		case <-done:
 			stop := time.Now()
 			if ntotal > 0 {
-				fmt.Printf("\n%d requests sent, %d (%d%%) responses, %d (%d%%) successful, time %dms\n",
+				fmt.Printf("\n%d requests sent, %d (%d%%) responses, %d (%d%%) successful, time %d ms\n",
 					ntotal,
 					nrecv,
 					(100*nrecv)/int(ntotal),
