@@ -333,7 +333,8 @@ func main() {
 		network = "tcp6"
 	}
 
-	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
+	ctx, cancel := context.WithCancel(context.Background())
+	ctx, stop := signal.NotifyContext(ctx, os.Interrupt)
 	defer stop()
 
 	var wg sync.WaitGroup
@@ -434,7 +435,7 @@ func main() {
 				count++
 				for {
 					if *maxCount > 0 && count > *maxCount {
-						break
+						cancel()
 					}
 					select {
 					case <-ctx.Done():
