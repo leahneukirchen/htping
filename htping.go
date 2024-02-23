@@ -3,7 +3,6 @@
 // To the extent possible under law, Leah Neukirchen <leah@vuxu.org>
 // has waived all copyright and related or neighboring rights to this work.
 // http://creativecommons.org/publicdomain/zero/1.0/
-
 package main
 
 import (
@@ -33,7 +32,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
-const VERSION = "0.1"
+const version = "0.1"
 
 var (
 	sizeGauge = prometheus.NewGaugeVec(
@@ -151,13 +150,16 @@ func newTransport() *transport {
 		ForceAttemptHTTP2: !http11,
 
 		DialContext: func(ctx context.Context, _, addr string) (net.Conn, error) {
-			if flag4 {
-				return dialer.DialContext(ctx, "tcp4", addr)
-			} else if flag6 {
-				return dialer.DialContext(ctx, "tcp6", addr)
-			} else {
-				return dialer.DialContext(ctx, "tcp", addr)
+			var network string
+			switch {
+			case flag4:
+				network = "tcp4"
+			case flag6:
+				network = "tcp6"
+			default:
+				network = "tcp"
 			}
+			return dialer.DialContext(ctx, network, addr)
 		},
 	}
 
@@ -187,7 +189,7 @@ func ping(ctx context.Context, url string, seq int, myTransport *transport, resu
 		return
 	}
 
-	req.Header.Set("User-Agent", "htping/"+VERSION)
+	req.Header.Set("User-Agent", "htping/"+version)
 
 	for _, e := range myHeaders {
 		req.Header.Set(e.key, e.value)
@@ -394,17 +396,17 @@ func main() {
 
 		u := u
 
-		parsedUrl, err := url.ParseRequestURI(u)
-		if (err != nil && err.(*url.Error).Op == "parse") {
-                        u = "http://" + u
-                }
+		parsedURL, err := url.ParseRequestURI(u)
+		if err != nil && err.(*url.Error).Op == "parse" {
+			u = "http://" + u
+		}
 
-		parsedUrl, err = url.ParseRequestURI(u)
+		parsedURL, err = url.ParseRequestURI(u)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "%s\n", err.Error())
 			os.Exit(1)
 		}
-		if !(parsedUrl.Scheme == "http" || parsedUrl.Scheme == "https") {
+		if !(parsedURL.Scheme == "http" || parsedURL.Scheme == "https") {
 			fmt.Fprintf(os.Stderr, "unsupported URL scheme: %s\n", u)
 			os.Exit(1)
 		}
