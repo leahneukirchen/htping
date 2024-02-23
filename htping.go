@@ -368,19 +368,20 @@ func main() {
 	var wg sync.WaitGroup
 	wg.Add(len(args))
 
-	for _, mu := range args {
-		u := mu
+		u := u
 
-		u2, err := url.ParseRequestURI(u)
-		if (err != nil && strings.HasSuffix(err.Error(),
-			"invalid URI for request")) ||
-			(u2.Scheme != "http" && u2.Scheme != "https") {
-			u = "http://" + u
-		}
+		parsedUrl, err := url.ParseRequestURI(u)
+		if (err != nil && err.(*url.Error).Op == "parse") {
+                        u = "http://" + u
+                }
 
-		_, err = url.ParseRequestURI(u)
+		parsedUrl, err = url.ParseRequestURI(u)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "%s\n", err.Error())
+			os.Exit(1)
+		}
+		if !(parsedUrl.Scheme == "http" || parsedUrl.Scheme == "https") {
+			fmt.Fprintf(os.Stderr, "unsupported URL scheme: %s\n", u)
 			os.Exit(1)
 		}
 
