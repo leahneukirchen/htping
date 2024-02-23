@@ -1,6 +1,6 @@
 module github.com/leahneukirchen/htping
 
-go 1.14
+go 1.16
 
 require (
 	github.com/prometheus/client_golang v1.18.0
