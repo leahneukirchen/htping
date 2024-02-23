@@ -253,7 +253,7 @@ func stats(results chan result, done chan bool) {
 			sum += r.dur
 			sum2 += r.dur * r.dur
 			nrecv++
-			if r.code <= 400 {
+			if r.code < 400 {
 				nsucc++
 			}
 
