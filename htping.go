@@ -383,8 +383,8 @@ func main() {
 
 	results := make(chan result)
 
+	wg.Add(1)
 	go func() {
-		wg.Add(1)
 		defer wg.Done()
 		stats(ctx, results)
 	}()
@@ -392,8 +392,6 @@ func main() {
 	count := 0
 
 	for _, u := range args {
-		wg.Add(1)
-
 		u := u
 
 		parsedURL, err := url.ParseRequestURI(u)
@@ -413,6 +411,7 @@ func main() {
 
 		fmt.Printf("%s %s\n", method, u)
 
+		wg.Add(1)
 		go func() {
 			myTransport := newTransport(parsedURL.Hostname())
 			defer wg.Done()
