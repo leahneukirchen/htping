@@ -102,7 +102,7 @@ type transport struct {
 	addr string
 }
 
-func newTransport() *transport {
+func newTransport(serverName string) *transport {
 	tr := &transport{}
 
 	tlsconfig := &tls.Config{
@@ -122,7 +122,7 @@ func newTransport() *transport {
 
 			opts := x509.VerifyOptions{
 				Roots:         tlsconfig.RootCAs,
-				DNSName:       tlsconfig.ServerName,
+				DNSName:       serverName,
 				Intermediates: x509.NewCertPool(),
 			}
 			for _, cert := range certs[1:] {
@@ -414,7 +414,7 @@ func main() {
 		fmt.Printf("%s %s\n", method, u)
 
 		go func() {
-			myTransport := newTransport()
+			myTransport := newTransport(parsedURL.Hostname())
 			defer wg.Done()
 
 			if *flood {
