@@ -7,7 +7,7 @@ MANDIR=$(PREFIX)/share/man
 
 all: $(ALL)
 
-htping:
+htping: htping.go
 	go build
 
 clean: FRC
